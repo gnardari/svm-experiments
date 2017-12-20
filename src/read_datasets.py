@@ -63,7 +63,7 @@ def extract_labels(f, one_hot=False, num_classes=10):
       return dense_to_one_hot(labels, num_classes)
     return labels
 
-def read_mnist(base_dir='../mnist', test=True):
+def read_mnist(base_dir='../datasets/mnist', test=True):
     mnist = {'train': {'data': None, 'labels': None},
              'test': {'data': None, 'labels': None}}
 
@@ -94,7 +94,7 @@ def read_mnist(base_dir='../mnist', test=True):
 
 '''
 
-def read_imagenet(base_dir='../imagenet/animals', split=0.8, test=False):
+def read_imagenet(base_dir='../datasets/imagenet/animals', split=0.8, test=False):
     if not test:
         split = 1.0
 
@@ -134,7 +134,7 @@ def read_imagenet(base_dir='../imagenet/animals', split=0.8, test=False):
 
 '''
 
-def read_msd(base_dir='../musicas', test=True):
+def read_msd(base_dir='../datasets/musicas', test=True):
     msd = {'train': {'data': None, 'labels': None},
            'test': {'data': None, 'labels': None}}
 
@@ -164,7 +164,7 @@ def read_msd(base_dir='../musicas', test=True):
 
 '''
 
-def read_movie_reviews(base_dir='../movie-sentiment'):
+def read_movie_reviews(base_dir='../datasets/movie-sentiment'):
     reduce_labels = lambda x: 0 if x < 2 else (1 if x == 2 else 2)
 
     reviews = {'train': {'data': None, 'labels': None},
