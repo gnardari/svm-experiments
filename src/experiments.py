@@ -56,7 +56,7 @@ def mnist_experiment():
     gram, clf = train_svm(X_train, y_train,
                           X_test, y_test, params)
 
-    # generalization_bound(gram, clf.dual_coef_)
+    generalization_bound(gram, clf.dual_coef_, clf.support_)
     return gram, clf
 
 def imagenet_experiment():

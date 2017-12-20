@@ -62,28 +62,27 @@ def calc_kernel(X, Y=None, params={}):
     return gram
 
 def calc_radius(gram):
-    # getting the top half of the matrix
     g = np.hstack([np.diagonal(gram, offset=i)
                    for i in range(gram.shape[0])])
-
     # comparar todos os itens da matriz de gram entre si
     dist = lambda uv: np.linalg.norm(uv[0]-uv[1])**2
-    # dist = lambda uv: (np.dot(uv[0], uv[0]) +
-    #                    np.dot(uv[1], uv[1]) -
-    #                    2*np.dot(uv[0], uv[1]))
-
     max_dist = max(map(dist, combinations(g,2)))
     return np.sqrt(max_dist)/2
 
-def generalization_bound(gram, coef_dual):
-    print(gram.shape)
-    print(coef_dual.shape)
-    print((coef_dual**2).shape)
-    W = coef_dual * gram
-    print(W.shape)
-    margin = 1 / np.sqrt(np.sum(W ** 2))
-    print(margin)
+def calc_margin(sgram, dual_coef):
+    margins = []
+    for class_cd in dual_coef:
+        class_cd = np.outer(class_cd, class_cd)
+        W = class_cd * sgram
+        margins.append(1 / np.sqrt(np.sum(W ** 2)))
+    return max(margins)
+
+def generalization_bound(gram, dual_coefs, svs):
+    sgram = gram[svs][:,svs]
+    N = gram.shape[0]
     # radius = calc_radius(gram)
+    margin = calc_margin(sgram, dual_coefs)
+    print(margin)
 
 def train_svm(X_train, y_train, X_test, y_test, params):
     gram = calc_kernel(X_train, params=params)
