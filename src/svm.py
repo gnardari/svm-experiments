@@ -77,12 +77,22 @@ def calc_margin(sgram, dual_coef):
         margins.append(1 / np.sqrt(np.sum(W ** 2)))
     return max(margins)
 
-def generalization_bound(gram, dual_coefs, svs):
+
+def shattering(r, rho):
+    return (r/rho)**2
+
+def generalization_bound(gram, dual_coefs, svs, delta=0.05):
     sgram = gram[svs][:,svs]
-    N = gram.shape[0]
-    # radius = calc_radius(gram)
+    n = gram.shape[0]
+    radius = calc_radius(gram)
     margin = calc_margin(sgram, dual_coefs)
-    print(margin)
+    stt = shattering(radius, margin)
+
+    gb = np.sqrt(4/n *
+                stt *
+                np.log(n)**2 *
+                np.log(1/delta))
+    return gb
 
 def train_svm(X_train, y_train, X_test, y_test, params):
     gram = calc_kernel(X_train, params=params)
