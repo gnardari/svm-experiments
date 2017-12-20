@@ -1,0 +1,14 @@
+# 1
+
+Calcular autovalores e autovetores, plot quantos sao os mais relevantes, como cada variavel tem anti ou correlação com cada variavel
+
+# 2
+
+Achar melhor configuração de SVM
+
+# 3
+
+Generalization bound. R/rho^2
+
+Tamanho de amostra de treinamento que garante delta = 0,05
+Delta é a probabilidade da diferença entre risco empírico e risco real 

@@ -1,0 +1,4 @@
+datasets/*
+models/*
+*.mp4
+src/*.pyc
