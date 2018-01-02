@@ -62,6 +62,7 @@ def calc_kernel(X, Y=None, params={}):
     return gram
 
 def calc_radius(gram):
+    return 0.1
     # pegar somente metade da matriz,
     # ja que dist(i,j) = dist(j,i)
     g = np.hstack([np.diagonal(gram, offset=i)
@@ -82,10 +83,21 @@ def calc_margin(sgram, dual_coef):
 def shattering(r, rho):
     return (r/rho)**2
 
-def solve_gen_bound_for_n(r, rho, delta=0.05):
-    return np.exp(-(rho*np.sqrt(delta))/r)
+def generalization_bound(n, delta, stt):
+    return np.sqrt(4.0/n *
+                   (stt *
+                    np.log(n)**2 *
+                    np.log(1.0/delta)))
 
-def generalization_bound(gram, dual_coefs, svs, delta=0.05):
+def solve_gen_bound_for_n(stt, delta=0.05):
+    res = 1
+    n = 1000
+    while res > 0.01:
+        res = generalization_bound(n, delta, stt)
+        n += 1000
+    return n
+
+def generalization(gram, dual_coefs, svs, delta=0.05):
     # support vectors in the gram matrix
     sgram = gram[svs][:,svs]
     n = gram.shape[0]
@@ -93,11 +105,7 @@ def generalization_bound(gram, dual_coefs, svs, delta=0.05):
     margin = calc_margin(sgram, dual_coefs)
     stt = shattering(radius, margin)
 
-    gb = np.sqrt(4.0/n *
-                stt *
-                np.log(n)**2 *
-                np.log(1.0/delta))
-
+    gb = generalization_bound(n, delta, stt)
     n_gb = solve_gen_bound_for_n(radius, margin)
 
     return n, radius, margin, stt, gb, n_gb
