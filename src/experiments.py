@@ -23,7 +23,7 @@ def mnist_experiment():
     mnist = read_mnist(test=True)
     X_train, y_train = subsample(mnist['train']['data'],
                                  mnist['train']['labels'],
-                                 0.2)
+                                 0.05)
 
     X_test, y_test = subsample(mnist['test']['data'],
                                mnist['test']['labels'],
@@ -56,8 +56,8 @@ def mnist_experiment():
     gram, clf = train_svm(X_train, y_train,
                           X_test, y_test, params)
 
-    generalization_bound(gram, clf.dual_coef_, clf.support_)
-    return gram, clf
+    res = generalization_bound(gram, clf.dual_coef_, clf.support_)
+    return gram, clf, res
 
 def imagenet_experiment():
     imagenet = read_imagenet(test=True)
@@ -142,6 +142,7 @@ def movie_review_experiment():
          cPickle.dump(svm, f)
 
 # movie_review_experiment()
-gram, clf = mnist_experiment()
+gram, clf, res = mnist_experiment()
+print(res)
 # with open('../models/mnist.pkl', 'rb') as f:
 #      svm = cPickle.load(f)
