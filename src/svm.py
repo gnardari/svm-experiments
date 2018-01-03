@@ -80,7 +80,7 @@ def calc_margin(sgram, dual_coef):
         margins.append(1 / np.sqrt(np.sum(W ** 2)))
     return max(margins)
 
-def shattering(r, rho):
+def vc(r, rho):
     return (r/rho)**2
 
 def generalization_bound(n, delta, stt):
@@ -103,7 +103,7 @@ def generalization(gram, dual_coefs, svs, delta=0.05):
     n = gram.shape[0]
     radius = calc_radius(gram)
     margin = calc_margin(sgram, dual_coefs)
-    stt = shattering(radius, margin)
+    stt = vc(radius, margin)
 
     gb = generalization_bound(n, delta, stt)
     n_gb = solve_gen_bound_for_n(radius, margin)
