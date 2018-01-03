@@ -87,6 +87,8 @@ def vgg_convolutions(dataset):
 def tfidf(tr_data, te_data):
     vect = TfidfVectorizer(ngram_range=(1,3),
                            max_df=0.7)
+
     tr_data = vect.fit_transform(tr_data)
     te_data = vect.transform(te_data)
-    return tr_data, te_data
+
+    return tr_data.todense(), te_data
