@@ -2,7 +2,7 @@ from circle import find_radius
 from read_datasets import *
 from feature_extractors import *
 from svm import *
-from pca import skpca
+from pca import *
 import numpy as np
 import cPickle
 
@@ -38,7 +38,7 @@ feature_extractors = {
     'tfidf': tfidf
 }
 
-def experiment(dataset_name, sample_pct, feat_extractors, pca=True):
+def experiment(dataset_name, sample_pct, extractors, pca=0.99):
     dataset = datasets[dataset_name]()
     X_train, y_train = subsample(dataset['train']['data'],
                                  dataset['train']['labels'],
@@ -48,7 +48,7 @@ def experiment(dataset_name, sample_pct, feat_extractors, pca=True):
                                dataset['test']['labels'])
     del dataset
 
-    for e in feat_extractors:
+    for e in extractors:
         if e == 'tfidf':
             X_train, X_test = feature_extractors[e](X_train, X_test)
         else:
@@ -56,9 +56,11 @@ def experiment(dataset_name, sample_pct, feat_extractors, pca=True):
             X_test = feature_extractors[e](X_test)
 
     if pca:
-        eigenvects, explained_var = skpca(X_train, 0.99)
+        eigenvects, explained_var = skpca(X_train, pca)
         X_train = normalize(np.dot(X_train, eigenvects))
         X_test = normalize(np.dot(X_test, eigenvects))
+
+        analyse_pca(X_train, y_train, eigenvects, explained_var)
 
     print('Training set size: %d, %d' % X_train.shape)
     print('Test set size: %d, %d' % X_test.shape)
@@ -80,4 +82,4 @@ def experiment(dataset_name, sample_pct, feat_extractors, pca=True):
 experiment('mnist', 0.05, ['hog'])
 # experiment('imagenet', 1.0, ['vgg'])
 # experiment('msd', 0.1, [], pca=False)
-# experiment('movies', 0.5, ['tfidf'], pca=False)
+# experiment('movies', 0.5, ['tfidf'], pca=2)
