@@ -3,6 +3,7 @@ import string
 import os
 import csv
 import numpy as np
+import pandas as pd
 import cv2
 
 '''
@@ -94,9 +95,10 @@ def read_mnist(base_dir='../datasets/mnist', test=True):
 
 '''
 
-def read_imagenet(base_dir='../datasets/imagenet/animals', split=0.8, test=False):
-    if not test:
-        split = 1.0
+def read_imagenet(base_dir='../datasets/imagenet/animals', split=0.8):
+    split = 0.9
+
+    lbs = {'dogs': 1, 'cats': 2, 'fish': 3, 'birds': 4}
 
     imagenet = {'train': {'data': None, 'labels': None},
                 'test': {'data': None, 'labels': None}}
@@ -109,7 +111,7 @@ def read_imagenet(base_dir='../datasets/imagenet/animals', split=0.8, test=False
 
         data += [cv2.imread(os.path.join(class_dir, img))
                  for img in dir_content]
-        labels += [d] * len(dir_content)
+        labels += [lbs[d]] * len(dir_content)
 
     idx = np.arange(len(data))
     np.random.shuffle(idx)
@@ -134,27 +136,19 @@ def read_imagenet(base_dir='../datasets/imagenet/animals', split=0.8, test=False
 
 '''
 
-def read_msd(base_dir='../datasets/musicas', test=True):
+def read_msd(base_dir='../datasets/musicas'):
     msd = {'train': {'data': None, 'labels': None},
            'test': {'data': None, 'labels': None}}
 
     train = np.load(os.path.join(base_dir, 'msd-25-genre-train.npz'))
-    seg_idx = np.random.choice(np.arange(120), size=120, replace=False)
-    ct = train['inputs'][:,seg_idx,:12]
-    # tis = train['inputs'].shape
-    tis = ct.shape
-    msd['train']['data'] = np.reshape(ct, (tis[0], tis[1]*tis[2]))
-    msd['train']['labels'] = np.array([train['label_map'][x] for x in train['targets']])
-
-    if not test:
-        return msd
+    tis = train['inputs'].shape
+    msd['train']['data'] = np.reshape(train['inputs'], (tis[0], tis[1]*tis[2]))
+    msd['train']['labels'] = np.array(train['targets'])
 
     test = np.load(os.path.join(base_dir, 'msd-25-genre-valid.npz'))
-    # seg_idx = np.random.choice(np.arange(120), size=50, replace=False)
-    ct = test['inputs'][:,seg_idx,:12]
-    tis = ct.shape
-    msd['test']['data'] = np.reshape(ct, (tis[0], tis[1]*tis[2]))
-    msd['test']['labels'] = np.array([train['label_map'][x] for x in test['targets']])
+    tis = test['inputs'].shape
+    msd['test']['data'] = np.reshape(test['inputs'], (tis[0], tis[1]*tis[2]))
+    msd['test']['labels'] = test['targets']
 
     return msd
 
@@ -204,3 +198,45 @@ def read_movie_reviews(base_dir='../datasets/movie-sentiment'):
     reviews['test']['labels'] = np.array(labels[split:])
 
     return reviews
+
+'''
+
+    SANTANDER CUSTOMER SATISFACTION
+
+'''
+
+def read_santander(base_dir='../datasets/santander'):
+    dataset = pd.read_csv(os.path.join(base_dir, 'train.csv'))
+
+    san = {'train': {'data': None, 'labels': None},
+           'test': {'data': None, 'labels': None}}
+    # remove constant columns (std = 0)
+    remove = []
+    for col in dataset.columns:
+        if dataset[col].std() == 0:
+            remove.append(col)
+
+    dataset.drop(remove, axis=1, inplace=True)
+
+    # remove duplicated columns
+    remove = []
+    cols = dataset.columns
+    for i in range(len(cols)-1):
+        v = dataset[cols[i]].values
+        for j in range(i+1,len(cols)):
+            if np.array_equal(v,dataset[cols[j]].values):
+                remove.append(cols[j])
+
+    dataset.drop(remove, axis=1, inplace=True)
+
+    data = dataset.drop(["TARGET","ID"],axis=1)
+    labels = dataset.TARGET.values
+
+    split = int(0.9 * len(labels))
+    san['train']['data'] = np.array(data[:split])
+    san['train']['labels'] = np.array(labels[:split])
+
+    san['test']['data'] = np.array(data[split:])
+    san['test']['labels'] = np.array(labels[split:])
+
+    return san
