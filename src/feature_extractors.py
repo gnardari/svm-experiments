@@ -91,4 +91,4 @@ def tfidf(tr_data, te_data):
     tr_data = vect.fit_transform(tr_data)
     te_data = vect.transform(te_data)
 
-    return tr_data.todense(), te_data
+    return tr_data, te_data
