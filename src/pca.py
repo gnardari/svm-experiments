@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.sparse import issparse
 from sklearn.decomposition import PCA
+from sklearn.decomposition import TruncatedSVD
 
 def pca(dataset, explained_var):
 
@@ -29,7 +31,10 @@ def pca(dataset, explained_var):
     return np.transpose(eigenvects), idxs
 
 def skpca(dataset, explained_var):
-    pca = PCA(n_components=explained_var)
+    if issparse(dataset):
+        pca = TruncatedSVD(n_components=2)
+    else:
+        pca = PCA(n_components=explained_var)
     pca.fit(dataset)
     return pca.components_.T, pca.explained_variance_ratio_
 
@@ -53,7 +58,7 @@ def biplot(score, y, coeff, labels=None):
     plt.ylabel("PC{}".format(2))
     plt.grid()
 
-def analyse_pca(x, y, eigenv, explained_var, k=5):
+def analyse_pca(x, y, eigenv, explained_var, dataset_name, k=5):
     # get the top 3 variables with the biggest correlation
     # or anticorrelation to the pca features
     corrIdx = np.argpartition(
@@ -61,4 +66,5 @@ def analyse_pca(x, y, eigenv, explained_var, k=5):
             -k)[-k:]
 
     biplot(x[0:100, :2], y[0:100], eigenv[corrIdx, :2])
-    plt.show()
+    # plt.show()
+    plt.savefig('../plots/{}-pca.png'.format(dataset_name))
