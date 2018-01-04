@@ -54,18 +54,10 @@ def biplot(score, y, coeff, labels=None):
     plt.grid()
 
 def analyse_pca(x, y, eigenv, explained_var, k=5):
-    eigenv = eigenv[:k]
-    explained_var = explained_var[:k]
-
-    print('top {} pca attributes: {}, explained var: {}'.format(
-        k, eigenv, np.sum(explained_var)
-        ))
-
-    np.random.shuffle(x)
-    biplot(x[:,0:2], y, np.transpose(eigenv[0:2, :]))
+    # get the top 3 variables with the biggest correlation
+    # or anticorrelation to the pca features
+    corrIdx = np.argpartition(
+            np.sum(np.absolute(eigenv[:, 0:2]), axis=1),
+            -k)[-k:]
+    biplot(x[0:100,0:2], y[0:100], eigenv[corrIdx, :2])
     plt.show()
-
-    # plot quais os atributos do pca mais relevantes ?
-    # quais features
-    # print('einvects: {}'.format(eigenvects.shape))
-    # print('Explained var: {}'.format(explained_var))
