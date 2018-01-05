@@ -1,4 +1,3 @@
-from circle import find_radius
 from read_datasets import *
 from feature_extractors import *
 from svm import *
@@ -28,7 +27,8 @@ datasets = {
     'mnist': read_mnist,
     'imagenet': read_imagenet,
     'msd': read_msd,
-    'movies': read_movie_reviews
+    'movies': read_movie_reviews,
+    'santander': read_santander
 }
 
 feature_extractors = {
@@ -59,11 +59,10 @@ def experiment(dataset_name, sample_pct, extractors, pca=0.99):
         eigenvects, explained_var = skpca(X_train, pca)
         X_train = normalize(np.dot(X_train, eigenvects))
         X_test = normalize(np.dot(X_test, eigenvects))
+        # analyse_pca(X_train, y_train, eigenvects, explained_var, dataset_name)
 
-        analyse_pca(X_train, y_train, eigenvects, explained_var)
-
-    print('Training set size: %d, %d' % X_train.shape)
-    print('Test set size: %d, %d' % X_test.shape)
+    # print('Training set size: %d, %d' % X_train.shape)
+    # print('Test set size: %d, %d' % X_test.shape)
 
     # clf, params = grid_search_svm(X_train, y_train,
     #                       X_test, y_test, dataset_name)
@@ -75,11 +74,13 @@ def experiment(dataset_name, sample_pct, extractors, pca=0.99):
     gram, clf = train_svm(X_train, y_train,
                           X_test, y_test, params)
 
-    res = generalization(gram, clf.dual_coef_, clf.support_)
+    res = generalization_bound(gram, clf)
+    print(res)
     return gram, clf, res
 
 
 experiment('mnist', 0.05, ['hog'])
 # experiment('imagenet', 1.0, ['vgg'])
-# experiment('msd', 0.1, [], pca=False)
-# experiment('movies', 0.5, ['tfidf'], pca=2)
+# experiment('msd', 0.2, [])
+# experiment('movies', 0.5, ['tfidf'])
+# experiment('santander', 1.0, [])
