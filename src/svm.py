@@ -20,7 +20,9 @@ def grid_search_svm(X_train, y_train, X_test, y_test, dataset_name):
     }]
 
     print("# Tuning hyper-parameters for the %s dataset" % dataset_name)
-    clf = GridSearchCV(SVC(cache_size=800), param_grid, cv=10, n_jobs=4, verbose=100)
+    clf = GridSearchCV(SVC(cache_size=800), param_grid, cv=10,
+                       scoring='accuracy',
+                       n_jobs=4, verbose=100)
     clf.fit(X_train, y_train)
 
     print("Grid scores on development set:")
@@ -62,7 +64,6 @@ def calc_kernel(X, Y=None, params={}):
     return gram
 
 def calc_radius(gram):
-    return 0.01
     # pegar somente metade da matriz,
     # ja que dist(i,j) = dist(j,i)
     g = np.hstack([np.diagonal(gram, offset=i)
