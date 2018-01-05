@@ -62,7 +62,7 @@ def calc_kernel(X, Y=None, params={}):
     return gram
 
 def calc_radius(gram):
-    return 0.1
+    return 0.01
     # pegar somente metade da matriz,
     # ja que dist(i,j) = dist(j,i)
     g = np.hstack([np.diagonal(gram, offset=i)
@@ -72,43 +72,55 @@ def calc_radius(gram):
     max_dist = max(map(dist, combinations(g,2)))
     return np.sqrt(max_dist)/2
 
-def calc_margin(sgram, dual_coef):
+def calc_margin(sgram, dual_coefs):
     margins = []
-    for class_cd in dual_coef:
-        class_cd = np.outer(class_cd, class_cd)
-        W = class_cd * sgram
+    for alphas in dual_coefs:
+        alphas = np.outer(alphas, alphas)
+        W = alphas * sgram
         margins.append(1 / np.sqrt(np.sum(W ** 2)))
     return max(margins)
 
-def vc(r, rho):
+def calc_vc_dim(r, rho):
     return (r/rho)**2
 
-def generalization_bound(n, delta, stt):
+def divergence_factor(n, delta, vc):
     return np.sqrt(4.0/n *
-                   (stt *
+                   (vc *
                     np.log(n)**2 *
                     np.log(1.0/delta)))
 
-def solve_gen_bound_for_n(stt, delta=0.05):
+def examples_inside_margin(gram, dual_coefs, intercepts):
+    nus = []
+    for i, alphas in enumerate(dual_coefs):
+        out_sum = np.outer(alphas, alphas).sum(axis=1)
+        nus.append(((out_sum - intercepts[i]) < 1).sum()
+                     / float(gram.shape[0]))
+    return max(nus)
+
+def solve_gen_bound_for_n(vc, v, delta=0.05):
     res = 1
     n = 1000
-    while res > 0.01:
-        res = generalization_bound(n, delta, stt)
+    while n < 10**8 and res > 0.01:
+        res = v + divergence_factor(n, delta, vc)
         n += 1000
     return n
 
-def generalization(gram, dual_coefs, svs, delta=0.05):
+def generalization_bound(gram, clf, delta=0.05):
+    dual_coefs = clf.dual_coef_
+    svs = clf.support_
+    intercepts =  clf.intercept_
     # support vectors in the gram matrix
     sgram = gram[svs][:,svs]
     n = gram.shape[0]
     radius = calc_radius(gram)
     margin = calc_margin(sgram, dual_coefs)
-    stt = vc(radius, margin)
+    vc = calc_vc_dim(radius, margin)
+    df = divergence_factor(n, delta, vc)
+    nu = examples_inside_margin(gram, dual_coefs, intercepts)
+    gb = nu + df
+    n_gb = solve_gen_bound_for_n(vc, nu)
 
-    gb = generalization_bound(n, delta, stt)
-    n_gb = solve_gen_bound_for_n(radius, margin)
-
-    return n, radius, margin, stt, gb, n_gb
+    return n, radius, margin, vc, gb, n_gb
 
 def train_svm(X_train, y_train, X_test, y_test, params):
     gram = calc_kernel(X_train, params=params)
