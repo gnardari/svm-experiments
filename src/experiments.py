@@ -39,6 +39,9 @@ feature_extractors = {
 }
 
 def experiment(dataset_name, sample_pct, extractors, pca=0.99):
+
+    print('***** Starting {} experiment ******\n'.format(dataset_name))
+
     dataset = datasets[dataset_name]()
     X_train, y_train = subsample(dataset['train']['data'],
                                  dataset['train']['labels'],
@@ -59,28 +62,28 @@ def experiment(dataset_name, sample_pct, extractors, pca=0.99):
         eigenvects, explained_var = skpca(X_train, pca)
         X_train = normalize(np.dot(X_train, eigenvects))
         X_test = normalize(np.dot(X_test, eigenvects))
-        # analyse_pca(X_train, y_train, eigenvects, explained_var, dataset_name)
+        analyse_pca(X_train, y_train, eigenvects, explained_var, dataset_name)
 
-    # print('Training set size: %d, %d' % X_train.shape)
-    # print('Test set size: %d, %d' % X_test.shape)
+    print('Training set size: %d, %d' % X_train.shape)
+    print('Test set size: %d, %d' % X_test.shape)
 
-    # clf, params = grid_search_svm(X_train, y_train,
-    #                       X_test, y_test, dataset_name)
-    #
-    # with open('../models/{}.pkl'.format(dataset_name), 'wb') as f:
-    #      cPickle.dump(clf, f)
+    clf, params = grid_search_svm(X_train, y_train,
+                          X_test, y_test, dataset_name)
 
-    params = {}
+    with open('../models/{}.pkl'.format(dataset_name), 'wb') as f:
+         cPickle.dump(clf, f)
+
     gram, clf = train_svm(X_train, y_train,
                           X_test, y_test, params)
 
     res = generalization_bound(gram, clf)
-    print(res)
+
+    print('Dataset Size: {}\nRadius: {}\nMargin: {}\nVC Dimension: {}\nGeneralization Bound: {}\nNecessary N size to garantee GB: {}\n'.format(*res))
     return gram, clf, res
 
 
 experiment('mnist', 0.05, ['hog'])
-# experiment('imagenet', 1.0, ['vgg'])
-# experiment('msd', 0.2, [])
-# experiment('movies', 0.5, ['tfidf'])
-# experiment('santander', 1.0, [])
+experiment('imagenet', 1.0, ['vgg'])
+experiment('msd', 0.2, [])
+experiment('movies', 0.5, ['tfidf'])
+experiment('santander', 1.0, [])
