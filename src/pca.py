@@ -68,3 +68,4 @@ def analyse_pca(x, y, eigenv, explained_var, dataset_name, k=5):
     biplot(x[0:100, :2], y[0:100], eigenv[corrIdx, :2])
     # plt.show()
     plt.savefig('../plots/{}-pca.png'.format(dataset_name))
+    plt.clf()
