@@ -1,9 +1,10 @@
-from itertools import combinations
+from sys import maxint
+from itertools import combinations, imap
 from sklearn.svm import SVC
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 from sklearn.metrics.pairwise import polynomial_kernel
-from sklearn.gaussian_process.kernels import RBF
+from sklearn.metrics.pairwise import rbf_kernel
 import numpy as np
 
 def grid_search_svm(X_train, y_train, X_test, y_test, dataset_name):
@@ -20,9 +21,9 @@ def grid_search_svm(X_train, y_train, X_test, y_test, dataset_name):
     }]
 
     print("# Tuning hyper-parameters for the %s dataset" % dataset_name)
-    clf = GridSearchCV(SVC(cache_size=800), param_grid, cv=10,
+    clf = GridSearchCV(SVC(cache_size=12000), param_grid, cv=10,
                        scoring='accuracy',
-                       n_jobs=4, verbose=100)
+                       n_jobs=4, verbose=1)
     clf.fit(X_train, y_train)
 
     print("Grid scores on development set:")
@@ -40,9 +41,12 @@ def grid_search_svm(X_train, y_train, X_test, y_test, dataset_name):
     print("The scores are computed on the full evaluation set.")
 
     y_true, y_pred = y_test, clf.predict(X_test)
+    accuracy = [1 if x == y else 0
+                for x,y in zip(y_true, y_pred)]
+    accuracy = np.sum(accuracy) / len(accuracy)
     print(classification_report(y_true, y_pred))
 
-    return clf.best_estimator_, clf.best_params_
+    return clf.best_estimator_, clf.best_params_, accuracy
 
 def calc_kernel(X, Y=None, params={}):
     kernel = params.get('kernel', 'linear')
@@ -59,18 +63,17 @@ def calc_kernel(X, Y=None, params={}):
                                  gamma=gamma,
                                  coef0=coef0)
     else:
-        # verificar se lenth_scale eh realmente igual a gamma
-        gram = RBF(X, Y, length_scale=gamma)
+        gram = rbf_kernel(X, Y, gamma)
     return gram
 
 def calc_radius(gram):
-    # pegar somente metade da matriz,
-    # ja que dist(i,j) = dist(j,i)
+    # matriz simetrica, pegar somente metade
     g = np.hstack([np.diagonal(gram, offset=i)
                    for i in range(gram.shape[0])])
+    g = np.random.choice(g, int(0.01 * g.shape[0]), replace=False)
     # comparar todos os itens da matriz de gram entre si
     dist = lambda uv: np.linalg.norm(uv[0]-uv[1])**2
-    max_dist = max(map(dist, combinations(g,2)))
+    max_dist = max(imap(dist, combinations(g,2)))
     return np.sqrt(max_dist)/2
 
 def calc_margin(sgram, dual_coefs):
@@ -79,7 +82,7 @@ def calc_margin(sgram, dual_coefs):
         alphas = np.outer(alphas, alphas)
         W = alphas * sgram
         margins.append(1 / np.sqrt(np.sum(W ** 2)))
-    return max(margins)
+    return min(margins)
 
 def calc_vc_dim(r, rho):
     return (r/rho)**2
@@ -98,11 +101,11 @@ def examples_inside_margin(gram, dual_coefs, intercepts):
                      / float(gram.shape[0]))
     return max(nus)
 
-def solve_gen_bound_for_n(vc, v, delta=0.05):
-    res = 1
+def solve_gen_bound_for_n(vc, delta=0.05):
+    res = 10
     n = 1000
-    while n < 10**8 and res > 0.01:
-        res = v + divergence_factor(n, delta, vc)
+    while n < 10**10 and res > 0.05:
+        res = divergence_factor(n, delta, vc)
         n += 1000
     return n
 
@@ -119,19 +122,12 @@ def generalization_bound(gram, clf, delta=0.05):
     df = divergence_factor(n, delta, vc)
     nu = examples_inside_margin(gram, dual_coefs, intercepts)
     gb = nu + df
-    n_gb = solve_gen_bound_for_n(vc, nu)
+    n_gb = solve_gen_bound_for_n(vc)
 
-    return n, radius, margin, vc, gb, n_gb
+    return n, radius, margin, vc, gb, n_gb, nu
 
-def train_svm(X_train, y_train, X_test, y_test, params):
+def train_svm(X_train, y_train, params):
     gram = calc_kernel(X_train, params=params)
-
-    clf = SVC(kernel='precomputed', cache_size=800)
+    clf = SVC(kernel='precomputed', cache_size=1200)
     clf.fit(gram, y_train)
-
-    X_test = calc_kernel(X_test, X_train, params)
-    y_true, y_pred = y_test, clf.predict(X_test)
-    print(classification_report(y_true, y_pred))
-
     return gram, clf
-
